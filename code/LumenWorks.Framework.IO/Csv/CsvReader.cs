@@ -377,6 +377,7 @@ namespace LumenWorks.Framework.IO.Csv
 
             Columns = new List<Column>();
 			DefaultHeaderName = "Column";
+		    AutoCreateColumnDefaultType = typeof (string);
 
 			_currentRecordIndex = -1;
 			_defaultParseErrorAction = ParseErrorAction.RaiseEvent;
@@ -584,6 +585,18 @@ namespace LumenWorks.Framework.IO.Csv
         /// </summary>
         public bool UseColumnDefaults { get; set; }
 
+        /// <summary>
+        /// Gets or sets whether columns should be auto created if headers are not present and
+        /// the <see cref="Columns"/> list is empty during initialization.
+        /// </summary>
+        public bool AutoCreateColumns { get; set; }
+
+        /// <summary>
+        /// Gets or sets the default column type that is used to auto generate columns based on
+        /// the <see cref="AutoCreateColumns"/> property.  The default value is: string
+        /// </summary>
+        public Type AutoCreateColumnDefaultType { get; set; }
+
 		#endregion
 
 		#region State
@@ -750,7 +763,7 @@ namespace LumenWorks.Framework.IO.Csv
 		}
 
 		/// <summary>
-		/// Gets the field with the specified name. <see cref="M:hasHeaders"/> must be <see langword="true"/>.
+		/// Gets the field with the specified name. <see cref="M:hasHeaders"/> must be <see langword="true"/> or <see cref="AutoCreateColumns"/> must be <see langword="true"/>.
 		/// </summary>
 		/// <value>
 		/// The field with the specified name.
@@ -777,10 +790,10 @@ namespace LumenWorks.Framework.IO.Csv
 				if (string.IsNullOrEmpty(field))
 					throw new ArgumentNullException("field");
 
-				if (!_hasHeaders)
-					throw new InvalidOperationException(ExceptionMessage.NoHeaders);
+                if (!_hasHeaders && !AutoCreateColumns)
+                    throw new InvalidOperationException(ExceptionMessage.NoHeaders);
 
-				int index = GetFieldIndex(field);
+                int index = GetFieldIndex(field);
 
 				if (index < 0)
 					throw new ArgumentException(string.Format(CultureInfo.InvariantCulture, ExceptionMessage.FieldHeaderNotFound, field), "field");
@@ -1631,6 +1644,16 @@ namespace LumenWorks.Framework.IO.Csv
                         _fieldHeaderIndexes.Add(Columns[i].Name, i);
                     }
 
+				    if (AutoCreateColumns && Columns.Count == 0)
+				    {
+                        for (var i = 0; i < _fieldCount; i++)
+                        {
+                            var column = new Column { Name = DefaultHeaderName + i, Type = AutoCreateColumnDefaultType};
+                            _fieldHeaderIndexes.Add(column.Name, i);
+                            Columns.Add(column);
+                        }
+                    }
+
 					if (onlyReadHeaders)
 					{
 						_firstRecordInCache = true;
@@ -1719,23 +1742,23 @@ namespace LumenWorks.Framework.IO.Csv
 	        }
 	    }
 
-	    #endregion
+        #endregion
 
-		#region SkipEmptyAndCommentedLines
+        #region SkipEmptyAndCommentedLines
 
-		/// <summary>
-		/// Skips empty and commented lines.
-		/// If the end of the buffer is reached, its content be discarded and filled again from the reader.
-		/// </summary>
-		/// <param name="pos">
-		/// The position in the buffer where to start parsing. 
-		/// Will contains the resulting position after the operation.
-		/// </param>
-		/// <returns><see langword="true"/> if the end of the reader has not been reached; otherwise, <see langword="false"/>.</returns>
-		/// <exception cref="T:System.ComponentModel.ObjectDisposedException">
-		///	The instance has been disposed of.
-		/// </exception>
-		private bool SkipEmptyAndCommentedLines(ref int pos)
+        /// <summary>
+        /// Skips empty and commented lines.
+        /// If the end of the buffer is reached, its content be discarded and filled again from the reader.
+        /// </summary>
+        /// <param name="pos">
+        /// The position in the buffer where to start parsing. 
+        /// Will contains the resulting position after the operation.
+        /// </param>
+        /// <returns><see langword="true"/> if the end of the reader has not been reached; otherwise, <see langword="false"/>.</returns>
+        /// <exception cref="T:System.ComponentModel.ObjectDisposedException">
+        ///	The instance has been disposed of.
+        /// </exception>
+        private bool SkipEmptyAndCommentedLines(ref int pos)
 		{
 			if (pos < _bufferLength)
 				DoSkipEmptyAndCommentedLines(ref pos);
