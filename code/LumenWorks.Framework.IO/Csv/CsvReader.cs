@@ -1620,7 +1620,7 @@ namespace LumenWorks.Framework.IO.Csv
 
                                     do
                                     {
-                                        newHeader = headerName + count;
+                                        newHeader = $"{headerName}_{count}";
                                         count++;
                                     } while (_fieldHeaderIndexes.ContainsKey(newHeader));
 
