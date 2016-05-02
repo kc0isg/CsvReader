@@ -597,6 +597,11 @@ namespace LumenWorks.Framework.IO.Csv
         /// </summary>
         public Type AutoCreateColumnDefaultType { get; set; }
 
+        /// <summary>
+        /// Gets or sets value controlling if duplicate columns are renamed.
+        /// </summary>
+        public bool RenameDuplicateColumns { get; set; }
+
 		#endregion
 
 		#region State
@@ -1605,8 +1610,29 @@ namespace LumenWorks.Framework.IO.Csv
                         // Create it if we haven't already set it explicitly
 					    var col = Columns.Count < i + 1 ? null : Columns[i];
 					    if (col == null)
-					    {
-					        col = new Column
+                        {
+                            if (_fieldHeaderIndexes.ContainsKey(headerName))
+                            {
+                                if (RenameDuplicateColumns)
+                                {
+                                    var count = 1;
+                                    string newHeader;
+
+                                    do
+                                    {
+                                        newHeader = headerName + count;
+                                        count++;
+                                    } while (_fieldHeaderIndexes.ContainsKey(newHeader));
+
+                                    headerName = newHeader;
+                                }
+                                else
+                                {
+                                    throw new Exception($"Column name of '{headerName}' already exists.");
+                                }
+                            }
+
+                            col = new Column
 					        {
 					            Name = headerName,
                                 // Default to string if not assigned.

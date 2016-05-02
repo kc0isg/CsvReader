@@ -4,6 +4,7 @@ using System.ComponentModel;
 using System.Data;
 using System.Drawing;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Windows.Forms;
 
@@ -20,13 +21,23 @@ namespace CsvReaderDemo
 		}
 
 		private void button1_Click(object sender, EventArgs e)
-		{
-			using (CachedCsvReader csv = new CachedCsvReader(new StringReader(CsvReaderSampleData.SampleData1), true))
-			{
-				dataGrid1.DataSource = csv;
-			}
+        {
+            using (var reader = new CsvReader(new StreamReader(@"C:\GPTS\SyntaxGenerator\SG Test Files\csv\YouthRiskSurvey_ForTesting.csv"), true))
+            {
+                //reader.AutoCreateColumns = true;
+                reader.SkipEmptyLines = true;
+                reader.RenameDuplicateColumns = true;
 
-			button2.Enabled = true;
+                var headers = reader.GetFieldHeaders();
+
+                dataGrid1.DataSource = reader;
+            }
+            //using (CachedCsvReader csv = new CachedCsvReader(new StringReader(CsvReaderSampleData.SampleData1), true))
+            //{
+            //	dataGrid1.DataSource = csv;
+            //}
+
+            button2.Enabled = true;
 		}
 
 		private void button2_Click(object sender, EventArgs e)
